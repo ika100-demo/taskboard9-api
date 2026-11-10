@@ -10,6 +10,7 @@ tasks:
     covers: [AC-002.4, AC-002.5]
     parallel_safe: true
     depends_on: []
+    done: true
   - id: t2
     title: Add PostgresTaskStore with the self-applied tasks schema
     files: [src/taskboard9_api/tasks/store.py, tests/test_pg_task_store.py]
