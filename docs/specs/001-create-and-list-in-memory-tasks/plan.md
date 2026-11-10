@@ -10,6 +10,7 @@ tasks:
     covers: [AC-001.1, AC-001.2, AC-001.3, AC-001.4]
     parallel_safe: true
     depends_on: []
+    done: true
   - id: t2
     title: Add Task record and thread-safe InMemoryTaskStore
     files: [src/taskboard9_api/tasks/store.py]
