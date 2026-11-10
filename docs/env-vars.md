@@ -13,7 +13,7 @@ Configuration is read exclusively from environment variables. Defaults below are
 
 | Variable | Default | Description |
 |---|---|---|
-| `DATABASE_URL` | _(unset — the service starts, task endpoints answer 503)_ | Postgres connection URL (`postgresql://user:password@host:5432/db`); provided by the system's postgres resource. Never logged. |
+| `DATABASE_URL` | _(unset — the service starts, task endpoints answer 503)_ | Postgres connection URL (a `postgresql://` URL with user, password, host, port and database); provided by the system's postgres resource. Never logged. |
 | `PG*` (`PGHOST`, `PGUSER`, ...) | _(libpq defaults)_ | Standard libpq variables; not required. |
 
 ## Observability
