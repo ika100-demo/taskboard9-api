@@ -41,6 +41,13 @@ class TaskCreate(BaseModel):
     title: Title
     due_date: date | None = None
 
+    @field_validator("title")
+    @classmethod
+    def _reject_nul(cls, value: str) -> str:
+        if "\x00" in value:
+            raise ValueError("title must not contain U+0000")
+        return value
+
     @field_validator("due_date", mode="before")
     @classmethod
     def _parse_due_date(cls, value: Any) -> date | None:
