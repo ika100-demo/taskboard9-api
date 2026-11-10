@@ -1,7 +1,7 @@
 ---
 spec_id: 002-store-tasks-in-postgres-so-they-survive
 title: Store tasks in Postgres so they survive restarts and are shared by every instance
-status: building
+status: done
 priority: P1
 shape: service-python
 parent: ika100-demo/taskboard9-gitops:001-persistent-tasks-in-postgres-with-a-web
@@ -161,3 +161,4 @@ testcontainers); keep an in-process restart test via TestClient(create_app()) on
 - 2026-11-10 created from the system plan, with its criteria (spec 147)
 - 2026-11-10 approved
 - 2026-11-10 building
+- 2026-11-10 done
