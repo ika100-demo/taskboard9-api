@@ -17,6 +17,7 @@ tasks:
     covers: [AC-001.1, AC-001.5, AC-001.6, AC-001.7]
     parallel_safe: true
     depends_on: []
+    done: true
   - id: t3
     title: Add tasks router and create_app factory wiring the store
     files: [src/taskboard9_api/tasks/routes.py, src/taskboard9_api/main.py]
