@@ -24,6 +24,7 @@ tasks:
     covers: [AC-001.1, AC-001.2, AC-001.3, AC-001.4, AC-001.5, AC-001.6, AC-001.7]
     parallel_safe: false
     depends_on: [t1, t2]
+    done: true
 human_steps:
   - Confirm the taskboard9-api entry in ika100-demo/taskboard9-gitops system.yaml runs exactly one replica with no autoscaling while tasks are held in memory (spec 001); with more, a GET after a POST can miss the task.
 ---
