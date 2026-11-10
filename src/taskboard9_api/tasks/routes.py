@@ -8,19 +8,19 @@ import structlog
 from fastapi import APIRouter, Depends, Request
 
 from .models import TaskCreate, TaskOut
-from .store import InMemoryTaskStore
+from .store import PostgresTaskStore
 
 router = APIRouter(tags=["tasks"])
 log = structlog.get_logger()
 
 
-def get_task_store(request: Request) -> InMemoryTaskStore:
+def get_task_store(request: Request) -> PostgresTaskStore:
     """Return the store carried by the running app."""
-    store: InMemoryTaskStore = request.app.state.task_store
+    store: PostgresTaskStore = request.app.state.task_store
     return store
 
 
-StoreDep = Annotated[InMemoryTaskStore, Depends(get_task_store)]
+StoreDep = Annotated[PostgresTaskStore, Depends(get_task_store)]
 
 
 @router.post("/tasks", status_code=201, response_model=TaskOut)

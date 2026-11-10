@@ -1,0 +1,50 @@
+# Verification — 002 Store tasks in Postgres so they survive restarts and are shared by every instance
+
+**Result:** pass
+**Commit:** 59117e5 · **Base:** a2d3651 · **Trace:** 6/6 criteria named by tests
+
+The acceptance tests (`tests/test_tasks_postgres.py`, `tests/conftest.py`) are unchanged since the red commit a46df7d (`git diff a46df7d HEAD -- tests/` touches only `test_db.py`, `test_pg_task_store.py`, `test_task_store.py`).
+
+| Criterion | Verdict | Tests | Implementation | Notes |
+|---|---|---|---|---|
+| AC-002.1 | met | `tests/test_tasks_postgres.py::test_task_survives_restart_ac_002_1` | `src/taskboard9_api/main.py:69` (each `create_app()` reads `DATABASE_URL`, own pool), `src/taskboard9_api/tasks/store.py:63`, `src/taskboard9_api/tasks/store.py:71` | First app closed (lifespan exit, `db.close()`) before the second is built on the same database; asserts 201, then 200 and the exact `{"id", "title": "Buy milk", "due_date": "2026-12-01"}` object. |
+| AC-002.2 | met | `tests/test_tasks_postgres.py::test_order_across_restart_ac_002_2` | `src/taskboard9_api/tasks/store.py:26` (`ORDER BY seq`), `src/taskboard9_api/tasks/store.py:71` | Empty database comes from the autouse fixture (`DROP TABLE IF EXISTS tasks`, `tests/conftest.py:39`); asserts `GET` equals exactly the four POST bodies, titles A, B, C, D. |
+| AC-002.3 | met | `tests/test_tasks_postgres.py::test_two_instances_share_tasks_ac_002_3` | `src/taskboard9_api/main.py:69`, `src/taskboard9_api/tasks/store.py:46` (advisory-locked schema), `src/taskboard9_api/tasks/store.py:71` | Two live apps with separate pools; both `GET`s equal `[a, b]` exactly. |
+| AC-002.4 | met | `tests/test_tasks_postgres.py::test_db_down_at_start_returns_503_ac_002_4`, `::test_db_down_after_ready_returns_503_ac_002_4`, `::test_database_url_unset_returns_503_ac_002_4`, `::test_invalid_body_is_422_while_db_down_ac_002_4` | `src/taskboard9_api/db.py:47` (unset URL), `src/taskboard9_api/db.py:77` (`OperationalError`, incl. `PoolTimeout`/`PoolClosed`, to `DatabaseUnavailable`), `src/taskboard9_api/main.py:60`, `src/taskboard9_api/main.py:86` (503 handler), `src/taskboard9_api/main.py:36`/`:42` (health/ready untouched) | Each case asserts elapsed < 5.0 s, 503, non-empty string `detail`, `/health` and `/ready` 200; both proxy cases assert after recovery that the 503 POST ("lost") is absent. Exact body `{"detail": "Database unavailable"}` is also asserted in `tests/test_task_store.py::test_app_without_database_url_is_healthy_but_tasks_are_503`. |
+| AC-002.5 | met | `tests/test_tasks_postgres.py::test_recovers_without_restart_ac_002_5`, `::test_recovers_when_started_while_down_ac_002_5` | `src/taskboard9_api/db.py:55` (`check_connection` discards broken connections), `src/taskboard9_api/db.py:64` (`open(wait=False)`, never blocks), `src/taskboard9_api/tasks/store.py:46` (schema flag set only after commit) | Same app object throughout; `GET` 200 and `POST` 201 polled with a 30 s budget; the second test builds the app while the proxy is down. Longer outages than `reconnect_timeout` (10 s) were checked by reading psycopg_pool 3.3.3: on give-up it decrements `_nconns` and clears `_growing` (`pool.py:688-691`), and the next checkout grows the pool again (`pool.py:265`, `:314`), so recovery does not depend on the outage length. |
+| AC-002.6 | met | `tests/test_tasks_postgres.py::test_spec_001_requests_exact_contract_ac_002_6`, `::test_422_body_and_no_row_stored_ac_002_6`, `::test_200_code_points_stored_ac_002_6[a*200, é*200]`; spec 001's `tests/test_tasks.py` (AC-001.1 to AC-001.6) run against Postgres via `_DB_MODULES` (`tests/conftest.py:17`) | `src/taskboard9_api/tasks/models.py:15` (title rules), `src/taskboard9_api/tasks/models.py:44` (U+0000 rejected as 422 on `["body","title"]`), `src/taskboard9_api/tasks/store.py:63` | Asserts the exact field set, trimmed title, ignored `id`, `null` due date, order, one 422 entry per invalid field with `loc`/`msg`/`type`, and no row in the `tasks` table after the 422s (direct SQL). |
+
+## Non-goals
+
+The spec lists none. No template-owned or unrelated surface changed: `/health`, `/ready`, `/ping`, `/metrics` (`src/taskboard9_api/main.py:36-57`) are untouched; the module-level `app = create_app()` stays (`main.py:92`).
+
+## Deviations from the plan
+
+- `tests/conftest.py`, `tests/test_tasks.py`, `tests/test_tasks_postgres.py` are in no task's `files`: they are the acceptance tests and harness of the red commit (plan: "belong to the acceptance tests"); the removed `test_restart_empties_store_ac_001_7` is the plan's prerequisite. Acceptable.
+- `docs/specs/001-create-and-list-in-memory-tasks/{spec,plan}.md`: AC-001.7 withdrawn, as the plan's prerequisite requires. Acceptable.
+- `docs/adr/001-postgres-persistence-with-psycopg.md`: written with the plan and linked from `design.md`. Acceptable.
+- `docs/backlog.md`: generated index row added; it still says `approved` while the spec is `building` (stale generated output, regenerated by `cplat spec index`). Acceptable, cosmetic.
+- All three tasks are `done: true`.
+
+## Contract
+
+Matches `design.md`, with one minor difference:
+
+- `ensure_schema()` and the task query run in separate pool checkouts (`src/taskboard9_api/tasks/store.py:46` and `:63`/`:71`), not "in the same checkout" as design "Data / Lifecycle" says. This costs one extra checkout on the first request per app only; behaviour, 503 mapping and timeouts are unaffected. Acceptable.
+
+Interfaces, timeouts (connect 2 s, checkout 2 s, `statement_timeout` 3000 ms, `tcp_user_timeout` 3000, `reconnect_timeout` 10), schema DDL, advisory lock key, parameterised SQL, the 503 body and the log fields (`database_unavailable` with the exception class name only, never the URL) are as designed.
+
+## Mutation check (report only)
+
+11 of 20 mutants of the changed code were caught by the acceptance tests (55 %; spec 152, report only).
+
+Survived (a test that names the criterion would fail if it checked this):
+- `src/taskboard9_api/db.py:19 2 → 3`
+- `src/taskboard9_api/db.py:21 3000 → 3001`
+- `src/taskboard9_api/db.py:85 2 → 3`
+- `src/taskboard9_api/db.py:52 10 → 11`
+- `src/taskboard9_api/db.py:56 False → True`
+- `src/taskboard9_api/main.py:63 or → and`
+- `src/taskboard9_api/main.py:76 True → False`
+- `src/taskboard9_api/tasks/store.py:12 1952543595 → 1952543596`
+- `src/taskboard9_api/tasks/store.py:55 True → False`
