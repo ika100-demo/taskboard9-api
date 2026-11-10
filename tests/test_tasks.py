@@ -106,12 +106,3 @@ def test_list_empty_ac_001_6(tclient):  # AC-001.6
     r = tclient.get("/tasks")
     assert r.status_code == 200
     assert r.json() == []
-
-
-def test_restart_empties_store_ac_001_7(tclient):  # AC-001.7
-    from taskboard9_api.main import create_app
-
-    assert tclient.post("/tasks", json={"title": "A"}).status_code == 201
-    assert len(tclient.get("/tasks").json()) == 1
-    restarted = TestClient(create_app())
-    assert restarted.get("/tasks").json() == []

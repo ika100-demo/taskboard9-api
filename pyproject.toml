@@ -30,6 +30,8 @@ dev = [
     "ruff>=0.7",
     "mypy>=1.13",
     "pip-audit>=2.7",
+    "testcontainers[postgres]>=4.8",
+    "psycopg[binary]>=3.2",
 ]
 
 [build-system]
