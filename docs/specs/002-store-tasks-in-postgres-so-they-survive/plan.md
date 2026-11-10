@@ -17,6 +17,7 @@ tasks:
     covers: [AC-002.1, AC-002.2, AC-002.3, AC-002.4, AC-002.6]
     parallel_safe: true
     depends_on: [t1]
+    done: true
   - id: t3
     title: Wire the Postgres store into create_app with lifespan and 503 handling
     files: [src/taskboard9_api/main.py, src/taskboard9_api/tasks/routes.py, src/taskboard9_api/tasks/models.py, src/taskboard9_api/tasks/__init__.py, src/taskboard9_api/tasks/store.py, tests/test_task_store.py]
