@@ -9,6 +9,13 @@ Configuration is read exclusively from environment variables. Defaults below are
 | `PORT` | `8080` | HTTP port the service listens on. |
 | `LOG_LEVEL` | `INFO` | Logging level. One of `DEBUG`, `INFO`, `WARNING`, `ERROR`. |
 
+## Database
+
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | _(unset — the service starts, task endpoints answer 503)_ | Postgres connection URL (`postgresql://user:password@host:5432/db`); provided by the system's postgres resource. Never logged. |
+| `PG*` (`PGHOST`, `PGUSER`, ...) | _(libpq defaults)_ | Standard libpq variables; not required. |
+
 ## Observability
 
 | Variable | Default | Description |
