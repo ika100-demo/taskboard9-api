@@ -77,6 +77,11 @@ class PgProxy:
     def down(self) -> None:
         listener, self._listener = self._listener, None
         if listener is not None:
+            # On Linux close() alone does not wake a thread blocked in accept(); the socket keeps accepting.
+            try:
+                listener.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
             listener.close()
         with self._lock:
             conns, self._conns = self._conns, []
