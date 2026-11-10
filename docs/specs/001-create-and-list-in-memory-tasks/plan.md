@@ -1,7 +1,7 @@
 ---
 spec_id: 001-create-and-list-in-memory-tasks
 shape: service-python
-spec_hash: d74e70d29ba7
+spec_hash: 659cbfdecc73
 summary: POST /tasks and GET /tasks backed by a per-process in-memory store, mounted through an app factory
 tasks:
   - id: t1
@@ -14,14 +14,14 @@ tasks:
   - id: t2
     title: Add Task record and thread-safe InMemoryTaskStore
     files: [src/taskboard9_api/tasks/store.py]
-    covers: [AC-001.1, AC-001.5, AC-001.6, AC-001.7]
+    covers: [AC-001.1, AC-001.5, AC-001.6]
     parallel_safe: true
     depends_on: []
     done: true
   - id: t3
     title: Add tasks router and create_app factory wiring the store
     files: [src/taskboard9_api/tasks/routes.py, src/taskboard9_api/main.py]
-    covers: [AC-001.1, AC-001.2, AC-001.3, AC-001.4, AC-001.5, AC-001.6, AC-001.7]
+    covers: [AC-001.1, AC-001.2, AC-001.3, AC-001.4, AC-001.5, AC-001.6]
     parallel_safe: false
     depends_on: [t1, t2]
     done: true
